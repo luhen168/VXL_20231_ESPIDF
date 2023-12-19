@@ -17,13 +17,18 @@
 #include "freertos/task.h"
 #include "esp_system.h"
 #include "LCD.h"
+// #include "blynk.h"
 
 char buffer[20]="Hello World!";
-
+char buffer1[20]="LuanYeuHien";
 
 void app_main(void)
 {
     lcd_init();
     lcd_clear();
     lcd_send_string(buffer);
+    lcd_put_cur(1, 0);
+    lcd_send_string(buffer1);
+    vTaskDelay(5000);
+    lcd_clear();
 }
