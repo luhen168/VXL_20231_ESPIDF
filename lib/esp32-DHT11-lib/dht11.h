@@ -39,7 +39,7 @@ typedef struct dht11_reading {
     int humidity;
 } dht11_reading;
 
-void DHT11_init(gpio_num_t);
+void DHT11_init(gpio_num_t gpio_num);
 
 dht11_reading DHT11_read();
 

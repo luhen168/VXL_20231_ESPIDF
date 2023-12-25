@@ -16,7 +16,7 @@ v1.0 - First release
 #ifndef MQ135_H
 #define MQ135_H
 
-#include "driver/gpio.h"
+#include "driver/adc.h"
 
 /// The load resistance on the board
 #define RLOAD 10.0
@@ -43,11 +43,10 @@ enum MQ135_status {
 
 typedef struct MQ135_reading {
     int status;
-    int ;
-    int ;
+    int ppm;
 } MQ135_reading; 
 
-void MQ135_init(gpio_num_t);
+void MQ135_init(adc_channel_t adc_channel);
 float getCorrectionFactor(float t, float h);
 float getResistance();
 float getCorrectedResistance(float t, float h);

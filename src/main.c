@@ -14,18 +14,19 @@
  */
 #include <stdio.h>
 #include "freertos/event_groups.h"
-#include "blynk.h"
+// #include "blynk.h"
 #include "esp_system.h"
 #include "dht11.h"
 #include "LCD.h"
 #include "wifiesp.h"
-// char buffer[20]="Anh nho em ";
-// char buffer1[20]="Thu Hien ak";
-// char buffer2[20]="Chuc vo iu";
-#define DHT_PIN 1  // Sử dụng GPIO 1 làm chân kết nối DATA cho cảm biến DHT11
-#define BUZZER_PIN 2 // GPIO kết nối với còi
-#define BLYNK_TOKEN "SjdMAHWAm8VwtpG9HE3_GtCcTAZLDvv_"
-#define BLYNK_SERVER "blynk.cloud"
+#include "MQ135.h"
+
+#define BUZZER_PIN 33 
+#define DHT11_PIN 34  
+#define MQ135_PIN ADC_CHANNEL_6  
+
+// #define BLYNK_TOKEN "SjdMAHWAm8VwtpG9HE3_GtCcTAZLDvv_"
+// #define BLYNK_SERVER "blynk.cloud"
 
 char msg0[20]="ConnectingWifi..";
 char msg1[20]="Connected Wifi!";
@@ -51,10 +52,12 @@ void app_main(void)
     lcd_send_string(msg0);
 
     //Initialize DHT11
-    DHT11_init(DHT_PIN);
+    DHT11_init(DHT11_PIN);
+
+    //Initialize MQ135
+    MQ135_init(MQ135_PIN);
 
     //Initialize Buzzer
-        // Khởi tạo GPIO cho còi
     gpio_config_t io_conf = {
         .pin_bit_mask = (1ULL << BUZZER_PIN),
         .mode = GPIO_MODE_OUTPUT,
@@ -119,7 +122,10 @@ void app_main(void)
             ESP_LOGE(TAG, "CRC error reading data from DHT11");
         }
 
+        MQ135_readDataRaw();
+
         vTaskDelay(pdMS_TO_TICKS(1000));  // Đợi 1 giây
+        //Đọc dữ liệu MQ135
     }
 }
 
