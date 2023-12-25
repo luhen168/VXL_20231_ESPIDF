@@ -1,0 +1,12 @@
+*** Non-Volatile Storage Library ***
+https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/storage/nvs_flash.html?highlight=nvs_flash_init#_CPPv414nvs_flash_initv
+
+*** WIFI ***
+https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/network/esp_wifi.html
+
+*** TCP/IP ***
+https://docs.espressif.com/projects/esp-idf/en/release-v4.0/api-reference/network/tcpip_adapter.html
+
+
+
+

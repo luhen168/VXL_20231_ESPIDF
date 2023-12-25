@@ -41,6 +41,9 @@ SOFTWARE.
 
 #include "blynk.h"
 
+#define BLYNK_DEFAULT_DOMAIN     "blynk.cloud"
+#define BLYNK_DEFAULT_PORT       80
+
 #define BLYNK_MAGIC 0xf932d1fb
 #define BLYNK_CHECK_MAGIC(c) do{if((c)->magic != BLYNK_MAGIC){return BLYNK_ERR_NOT_INITIALIZED;}} while (0)
 
@@ -54,8 +57,8 @@ SOFTWARE.
 
 const char *tag = "blynk";
 
-static const char default_server[] = "blynk-cloud.com";
-static const char default_port[] = "8442";
+const char default_server[] = "blynk.cloud";
+const char default_port[] = "80";
 
 static void parse_cmd (blynk_client_t *c, uint8_t d);
 static void parse_id (blynk_client_t *c, uint8_t d);
@@ -115,7 +118,8 @@ blynk_err_t blynk_set_options(blynk_client_t *c, const blynk_options_t *opt) {
 	if (!s->opt.server[0]) {
 		snprintf(s->opt.server, sizeof(s->opt.server), "%s:%s", default_server, default_port);
 	} else if (!memchr(s->opt.server, ':', sizeof(s->opt.server))) {
-		snprintf(s->opt.server, sizeof(s->opt.server), "%s:%s", opt->server, default_port);
+		// snprintf(s->opt.server, sizeof(s->opt.server), "%s:%s", opt->server, default_port);
+		snprintf(s->opt.server, sizeof(s->opt.server), "%s:%s", default_server, default_port);
 	}
 
 	if (!s->opt.ping_interval) {
@@ -606,7 +610,7 @@ static void advance_ping(blynk_client_t *c) {
 	unsigned long ping_interval = c->state.opt.ping_interval;
 	xSemaphoreGive(c->state.mtx);
 
-	c->priv.ping_deadline = xTaskGetTickCount() + portTICK_PERIOD_MS((TickType_t)ping_interval);
+	c->priv.ping_deadline = xTaskGetTickCount() + (TickType_t)ping_interval/portTICK_PERIOD_MS;
 }
 
 static TickType_t get_timeout(const blynk_client_t *c) {
@@ -614,7 +618,7 @@ static TickType_t get_timeout(const blynk_client_t *c) {
 	unsigned long timeout = c->state.opt.timeout;
 	xSemaphoreGive(c->state.mtx);
 
-	return portTICK_PERIOD_MS((TickType_t)timeout);
+	return (TickType_t)timeout/portTICK_PERIOD_MS;
 }
 
 static blynk_err_t handle_timers(blynk_client_t *c) {
@@ -764,8 +768,8 @@ static blynk_err_t blynk_loop(blynk_client_t *c) {
 		struct timeval tv;
 
 		if (timeout_set) {
-			tv.tv_sec = (time_t)timeout * portTICK_RATE_MS / 1000;
-			tv.tv_usec = (((time_t)timeout * portTICK_RATE_MS) % 1000) * 1000;
+			tv.tv_sec = (time_t)timeout *  1000/portTICK_PERIOD_MS;
+			tv.tv_usec = (((time_t)timeout * portTICK_PERIOD_MS) % 1000) * 1000;
 		}
 
 		int nfds = select(FD_SETSIZE, &rdset, NULL, NULL, timeout_set ? &tv : NULL);
@@ -856,7 +860,7 @@ static void blynk_task(void *arg) {
 		unsigned int delay = c->state.opt.reconnect_delay;
 		xSemaphoreGive(c->state.mtx);
 
-		vTaskDelay(portTICK_RATE_MS(delay));
+		vTaskDelay(delay/portTICK_PERIOD_MS);
 	}
 
 	ESP_LOGE(tag, "terminating...");
