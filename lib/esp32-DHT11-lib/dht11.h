@@ -22,8 +22,8 @@
  * SOFTWARE.
 */
 
-#ifndef DHT11_H_
-#define DHT11_H_
+#ifndef _DHT11_H_
+#define _DHT11_H_
 
 #include "driver/gpio.h"
 
@@ -39,8 +39,10 @@ typedef struct dht11_reading {
     int humidity;
 } dht11_reading;
 
+//Hàm khởi tạo DHT11
 void DHT11_init(gpio_num_t gpio_num);
 
+//Hàm đọc dữ liệu cảm biến
 dht11_reading DHT11_read();
 
 #endif

@@ -27,7 +27,6 @@
 #include "rom/ets_sys.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
-
 #include "dht11.h"
 
 static gpio_num_t dht_gpio;
@@ -108,17 +107,16 @@ dht11_reading DHT11_read() {
     if(esp_timer_get_time() - 2000000 < last_read_time) {
         return last_read;
     }
-
     last_read_time = esp_timer_get_time();
-
     uint8_t data[5] = {0,0,0,0,0};
 
+    /* MCU send start signal to DHT11 in 5.2 datasheet dht11 page 6 */
     _sendStartSignal();
-
+    // Phần phản hồi (response) sau bước trên
     if(_checkResponse() == DHT11_TIMEOUT_ERROR)
         return last_read = _timeoutError();
     
-    /* Read response */
+    /* DHT11 response MCU in 5.3 datasheet dht11 page 7 */
     for(int i = 0; i < 40; i++) {
         /* Initial data */
         if(_waitOrTimeout(50, 0) == DHT11_TIMEOUT_ERROR)

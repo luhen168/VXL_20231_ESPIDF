@@ -6,119 +6,144 @@
 */
 /**************************************************************************/
 
-#include "MQ135.h"
-#include "esp_timer.h"
-#include "rom/ets_sys.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <math.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
+#include "soc/soc_caps.h"
+#include "esp_log.h"
+#include "esp_adc/adc_oneshot.h"
+#include "esp_adc/adc_cali.h"
+#include "esp_adc/adc_cali_scheme.h"
+#include "MQ135.h"
 
+const static char *TAG = "EXAMPLE";
 
-static adc_channel_t mq135_adc;
+/*---------------------------------------------------------------
+        ADC General Macros
+---------------------------------------------------------------*/
+//ADC1 Channels
+#if CONFIG_IDF_TARGET_ESP32
+#define EXAMPLE_ADC1_CHAN0          ADC_CHANNEL_6
+#define EXAMPLE_ADC1_CHAN1          ADC_CHANNEL_5
+#else
+#define EXAMPLE_ADC1_CHAN0          ADC_CHANNEL_6
+#define EXAMPLE_ADC1_CHAN1          ADC_CHANNEL_3
+#endif
 
-void MQ135_init(adc_channel_t adc_channel) {
-    mq135_adc = adc_channel;
-    /* Wait 1 seconds to make the device pass its initial unstable status */
-    vTaskDelay(1000 / portTICK_PERIOD_MS);
-    adc1_config_width(ADC_WIDTH_BIT_12);
-    adc1_config_channel_atten(adc_channel, ADC_ATTEN_DB_11);
+#define EXAMPLE_ADC_ATTEN           ADC_ATTEN_DB_11
+
+static int adc_raw[2][10];
+static int voltage[2][10];
+static bool example_adc_calibration_init(adc_unit_t unit, adc_channel_t channel, adc_atten_t atten, adc_cali_handle_t *out_handle);
+static void example_adc_calibration_deinit(adc_cali_handle_t handle);
+
+MQ135 mq135;
+adc_oneshot_unit_handle_t adc1_handle;
+adc_cali_handle_t adc1_cali_chan0_handle ;
+/*---------------------------------------------------------------
+        ADC Calibration
+---------------------------------------------------------------*/
+
+void MQ135_init()
+{
+    //-------------ADC1 Init---------------//
+    adc_oneshot_unit_init_cfg_t init_config1 = {
+      .unit_id = ADC_UNIT_1,
+    };
+    ESP_ERROR_CHECK(adc_oneshot_new_unit(&init_config1, &adc1_handle));
+
+    //-------------ADC1 Config---------------//
+    adc_oneshot_chan_cfg_t config = {
+        .bitwidth = ADC_BITWIDTH_DEFAULT,
+        .atten = EXAMPLE_ADC_ATTEN,
+    };
+    ESP_ERROR_CHECK(adc_oneshot_config_channel(adc1_handle, EXAMPLE_ADC1_CHAN0, &config));
+
+    //-------------ADC1 Calibration Init---------------//
+    adc1_cali_chan0_handle = NULL;
+    mq135.cali = example_adc_calibration_init(ADC_UNIT_1, EXAMPLE_ADC1_CHAN0, EXAMPLE_ADC_ATTEN, &adc1_cali_chan0_handle);
 }
 
-void MQ135_readDataRaw(){
-    uint32_t adc_value = adc1_get_raw(mq135_adc);
-    printf("%d",adc_value);
+
+void MQ135_readData(char *read){
+    float rload = 10.0;
+    float rzero = 76.63;
+    float rs;
+    float ppm;
+        ESP_ERROR_CHECK(adc_oneshot_read(adc1_handle, EXAMPLE_ADC1_CHAN0, &adc_raw[0][0]));
+        ESP_LOGI(TAG, "ADC%d Channel[%d] Raw Data: %d", ADC_UNIT_1 + 1, EXAMPLE_ADC1_CHAN0, adc_raw[0][0]);
+        if (mq135.cali) {
+            ESP_ERROR_CHECK(adc_cali_raw_to_voltage(adc1_cali_chan0_handle, adc_raw[0][0], &voltage[0][0]));
+            ESP_LOGI(TAG, "ADC%d Channel[%d] Cali Voltage: %d mV", ADC_UNIT_1 + 1, EXAMPLE_ADC1_CHAN0, voltage[0][0]);
+            // ESP_LOGI(TAG, "ADC%d Channel[%d] Cali Voltage: %.2f ppm", ADC_UNIT_1 + 1, EXAMPLE_ADC1_CHAN0, getPPM());
+            rs = ((4095./(float)voltage[0][0]) - 1.)*rload;
+            ppm = PARA * pow((rs/rzero), -PARB);
+            sprintf(read,"%.2f",ppm);
+        }
 }
 
-/**************************************************************************/
-/*!
-@brief  Get the correction factor to correct for temperature and humidity
+static bool example_adc_calibration_init(adc_unit_t unit, adc_channel_t channel, adc_atten_t atten, adc_cali_handle_t *out_handle)
+{
+    adc_cali_handle_t handle = NULL;
+    esp_err_t ret = ESP_FAIL;
+    bool calibrated = false;
 
-@param[in] t  The ambient air temperature
-@param[in] h  The relative humidity
+#if ADC_CALI_SCHEME_CURVE_FITTING_SUPPORTED
+    if (!calibrated) {
+        ESP_LOGI(TAG, "calibration scheme version is %s", "Curve Fitting");
+        adc_cali_curve_fitting_config_t cali_config = {
+            .unit_id = unit,
+            .chan = channel,
+            .atten = atten,
+            .bitwidth = ADC_BITWIDTH_DEFAULT,
+        };
+        ret = adc_cali_create_scheme_curve_fitting(&cali_config, &handle);
+        if (ret == ESP_OK) {
+            calibrated = true;
+        }
+    }
+#endif
 
-@return The calculated correction factor
-*/
-/**************************************************************************/
-float getCorrectionFactor(float t, float h) {
-  return CORA * t * t - CORB * t + CORC - (h-33.)*CORD;
+#if ADC_CALI_SCHEME_LINE_FITTING_SUPPORTED
+    if (!calibrated) {
+        ESP_LOGI(TAG, "calibration scheme version is %s", "Line Fitting");
+        adc_cali_line_fitting_config_t cali_config = {
+            .unit_id = unit,
+            .atten = atten,
+            .bitwidth = ADC_BITWIDTH_DEFAULT,
+        };
+        ret = adc_cali_create_scheme_line_fitting(&cali_config, &handle);
+        if (ret == ESP_OK) {
+            calibrated = true;
+        }
+    }
+#endif
+
+    *out_handle = handle;
+    if (ret == ESP_OK) {
+        ESP_LOGI(TAG, "Calibration Success");
+    } else if (ret == ESP_ERR_NOT_SUPPORTED || !calibrated) {
+        ESP_LOGW(TAG, "eFuse not burnt, skip software calibration");
+    } else {
+        ESP_LOGE(TAG, "Invalid arg or no memory");
+    }
+
+    return calibrated;
 }
 
-/**************************************************************************/
-/*!
-@brief  Get the resistance of the sensor, ie. the measurement value
+// static void example_adc_calibration_deinit(adc_cali_handle_t handle)
+// {
+// #if ADC_CALI_SCHEME_CURVE_FITTING_SUPPORTED
+//     ESP_LOGI(TAG, "deregister %s calibration scheme", "Curve Fitting");
+//     ESP_ERROR_CHECK(adc_cali_delete_scheme_curve_fitting(handle));
 
-@return The sensor resistance in kOhm
-*/
-/**************************************************************************/
-// float getResistance() {
-//  AnalogIn ain(_pin);
-//   AnalogIn ain(PA_0);
-//   int val = ain.read();
-//   return ((1023./(float)val) * 5. - 1.)*RLOAD;
+// #elif ADC_CALI_SCHEME_LINE_FITTING_SUPPORTED
+//     ESP_LOGI(TAG, "deregister %s calibration scheme", "Line Fitting");
+//     ESP_ERROR_CHECK(adc_cali_delete_scheme_line_fitting(handle));
+// #endif
 // }
 
-/**************************************************************************/
-/*!
-@brief  Get the resistance of the sensor, ie. the measurement value corrected
-        for temp/hum
 
-@param[in] t  The ambient air temperature
-@param[in] h  The relative humidity
-
-@return The corrected sensor resistance kOhm
-*/
-/**************************************************************************/
-float getCorrectedResistance(float t, float h) {
-  return getResistance()/getCorrectionFactor(t, h);
-}
-
-/**************************************************************************/
-/*!
-@brief  Get the ppm of CO2 sensed (assuming only CO2 in the air)
-
-@return The ppm of CO2 in the air
-*/
-/**************************************************************************/
-float getPPM() {
-  return PARA * pow((getResistance()/RZERO), -PARB);
-}
-
-/**************************************************************************/
-/*!
-@brief  Get the ppm of CO2 sensed (assuming only CO2 in the air), corrected
-        for temp/hum
-
-@param[in] t  The ambient air temperature
-@param[in] h  The relative humidity
-
-@return The ppm of CO2 in the air
-*/
-/**************************************************************************/
-float getCorrectedPPM(float t, float h) {
-  return PARA * pow((getCorrectedResistance(t, h)/RZERO), -PARB);
-}
-
-/**************************************************************************/
-/*!
-@brief  Get the resistance RZero of the sensor for calibration purposes
-
-@return The sensor resistance RZero in kOhm
-*/
-/**************************************************************************/
-float getRZero() {
-  return getResistance() * pow((ATMOCO2/PARA), (1./PARB));
-}
-
-/**************************************************************************/
-/*!
-@brief  Get the corrected resistance RZero of the sensor for calibration
-        purposes
-
-@param[in] t  The ambient air temperature
-@param[in] h  The relative humidity
-
-@return The corrected sensor resistance RZero in kOhm
-*/
-/**************************************************************************/
-float getCorrectedRZero(float t, float h) {
-  return getCorrectedResistance(t, h) * pow((ATMOCO2/PARA), (1./PARB));
-}

@@ -126,7 +126,6 @@ void lcd_init (void)
 	lcd_send_cmd (0x20);  // 4bit mode
 	usleep(10000);
 
-  	// // dislay initialisation
 	// lcd_send_cmd (0x28); // Function set --> DL=0 (4 bit mode), N = 1 (2 line display) F = 0 (5x8 characters)
 	// usleep(1000);
 	// lcd_send_cmd (0x08); //Display on/off control --> D=0,C=0, B=0  ---> display off
@@ -147,6 +146,13 @@ void lcd_clear (void)
 	lcd_put_cur(0,0);
 }
 
+
+/**
+ * @brief Function to put cursor 
+ * 
+ * @param row from 0-1
+ * @param col from 0-15
+ */
 void lcd_put_cur(int row, int col)
 {
     switch (row)

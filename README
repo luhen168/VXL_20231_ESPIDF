@@ -17,8 +17,13 @@ https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/networ
 https://docs.espressif.com/projects/esp-idf/en/release-v4.0/api-reference/network/tcpip_adapter.html
 
 *** ADC ***
-Trang 39 datasheet, phần 3.9 Analog Peripherals
+Trang 38 datasheet, phần 3.9.1 Analog Peripherals:
+https://www.espressif.com/sites/default/files/documentation/esp32_datasheet_en.pdf
+
+*** Tham khảo thư viện ***
 https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/peripherals/adc_oneshot.html#
+
+
 
 *** I2C ***
 Trang 284 rm, phần 11.I2C Controller 
