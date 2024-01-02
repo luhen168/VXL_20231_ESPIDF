@@ -16,18 +16,23 @@ https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/networ
 *** TCP/IP ***
 https://docs.espressif.com/projects/esp-idf/en/release-v4.0/api-reference/network/tcpip_adapter.html
 
+*** MQTT ***
+https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/protocols/mqtt.html
+
 *** ADC ***
 Trang 38 datasheet, phần 3.9.1 Analog Peripherals:
 https://www.espressif.com/sites/default/files/documentation/esp32_datasheet_en.pdf
 
-*** Tham khảo thư viện ***
+Tham khảo thư viện
 https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/peripherals/adc_oneshot.html#
 
 
 
-*** I2C ***
+*** I2C and LCD1602 ***
 Trang 284 rm, phần 11.I2C Controller 
 Trang 36 datasheet, phần 3.8 Digital Peripherals 
+ * [HD44780 datasheet](https://www.sparkfun.com/datasheets/LCD/HD44780.pdf)
+ * [PCF8574A Remote 8-bit I/O Expander for I2C Bus](http://www.ti.com/lit/ds/symlink/pcf8574a.pdf)
 
 *** DHT11 ***
 https://www.laptrinhdientu.com/2022/06/DHT11.html
