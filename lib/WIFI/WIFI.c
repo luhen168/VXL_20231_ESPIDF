@@ -8,9 +8,12 @@
  * @copyright Copyright (c) 2023
  * 
  */
-#include "wifiesp.h"
+#include "WIFI.h"
 
 /* FreeRTOS event group to signal when we are connected*/
+#define ESP_WIFI_SSID "Tang2_Luan"
+#define ESP_WIFI_PASS "luantrungpro"
+
 static EventGroupHandle_t s_wifi_event_group;
 const char *TAG = "wifi";
 int s_retry_num = 0;
@@ -64,8 +67,8 @@ void wifi_init_sta(uint8_t *check)
 
     wifi_config_t wifi_config = {
         .sta = {
-            .ssid = EXAMPLE_ESP_WIFI_SSID,
-            .password = EXAMPLE_ESP_WIFI_PASS,
+            .ssid = ESP_WIFI_SSID,
+            .password = ESP_WIFI_PASS,
             /* Authmode threshold resets to WPA2 as default if password matches WPA2 standards (pasword len => 8).
              * If you want to connect the device to deprecated WEP/WPA networks, Please set the threshold value
              * to WIFI_AUTH_WEP/WIFI_AUTH_WPA_PSK and set the password with length and format matching to

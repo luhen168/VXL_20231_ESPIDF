@@ -9,6 +9,9 @@
  * 
  */
 #include "mqttTCP.h"
+#include "MQ135.h"
+#include "dht11.h"
+
 
 /* MQTT (over TCP) Example
 
@@ -26,7 +29,8 @@ static void log_error_if_nonzero(const char *message, int error_code)
     }
 }
 
-/*
+
+/**
  * @brief Event handler registered to receive MQTT events
  *
  *  This function is called by the MQTT client event loop.
@@ -36,7 +40,7 @@ static void log_error_if_nonzero(const char *message, int error_code)
  * @param event_id The id for the received event.
  * @param event_data The data for the event, esp_mqtt_event_handle_t.
  */
-static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_t event_id, void *event_data)
+static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_t event_id, void *event_data,dht11_reading dht11, MQ135 mq135 )
 {
     ESP_LOGD(TAG, "Event dispatched from event loop base=%s, event_id=%" PRIi32 "", base, event_id);
     esp_mqtt_event_handle_t event = event_data;
@@ -46,7 +50,7 @@ static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_
     case MQTT_EVENT_CONNECTED:
         ESP_LOGI(TAG, "MQTT_EVENT_CONNECTED");
         msg_id = esp_mqtt_client_publish(client, "VXL20231/LUAN", "79,26,412", 0, 0, 0);
-        ESP_LOGI(TAG, "sent publish successful, msg_id=%d", msg_id);
+        ESP_LOGE(TAG, "sent publish successful,%d,%d,%d", dht11.temperature,dht11.humidity,mq135.ppm);
 
 
         // msg_id = esp_mqtt_client_subscribe(client, "/topic/qos0", 0);

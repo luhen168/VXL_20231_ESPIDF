@@ -1,7 +1,17 @@
 #ifndef _MQ135_H
 #define _MQ135_H
 
-
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <math.h>
+// #include "freertos/FreeRTOS.h"
+// #include "freertos/task.h"
+#include "soc/soc_caps.h"
+#include "esp_log.h"
+#include "esp_adc/adc_oneshot.h"
+#include "esp_adc/adc_cali.h"
+#include "esp_adc/adc_cali_scheme.h"
 /// For details about the parameters below, see:
 /// http://davidegironi.blogspot.com/2014/01/cheap-co2-meter-using-mq135-sensor-with.html
 /// https://hackaday.io/project/3475-sniffing-trinket/log/12363-mq135-arduino-library

@@ -22,12 +22,8 @@
  * SOFTWARE.
 */
 
-#include "esp_timer.h"
-#include "driver/gpio.h"
-#include "rom/ets_sys.h"
-#include "freertos/FreeRTOS.h"
-#include "freertos/task.h"
-#include "dht11.h"
+
+#include "DHT11.h"
 
 static gpio_num_t dht_gpio;
 static int64_t last_read_time = -2000000;

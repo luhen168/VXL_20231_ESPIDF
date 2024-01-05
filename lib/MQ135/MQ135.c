@@ -6,17 +6,7 @@
 */
 /**************************************************************************/
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <math.h>
-#include "freertos/FreeRTOS.h"
-#include "freertos/task.h"
-#include "soc/soc_caps.h"
-#include "esp_log.h"
-#include "esp_adc/adc_oneshot.h"
-#include "esp_adc/adc_cali.h"
-#include "esp_adc/adc_cali_scheme.h"
+
 #include "MQ135.h"
 
 const static char *TAG = "EXAMPLE";
@@ -81,7 +71,7 @@ void MQ135_readData(char *read){
             // ESP_LOGI(TAG, "ADC%d Channel[%d] Cali Voltage: %.2f ppm", ADC_UNIT_1 + 1, EXAMPLE_ADC1_CHAN0, getPPM());
             rs = ((4095./(float)voltage[0][0]) - 1.)*rload;
             ppm = PARA * pow((rs/rzero), -PARB);
-            sprintf(read,"%.2f",ppm);
+            sprintf(read,"%d",(int)ppm);
         }
 }
 

@@ -26,6 +26,10 @@
 #define _DHT11_H_
 
 #include "driver/gpio.h"
+#include "esp_timer.h"
+#include "rom/ets_sys.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
 
 enum dht11_status {
     DHT11_CRC_ERROR = -2,
