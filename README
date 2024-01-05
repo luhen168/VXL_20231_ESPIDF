@@ -1,3 +1,8 @@
+*** Config PIN SENSOR and BUZZER ***
+PIN 34: MQ135
+PIN 32: BUZZER
+PIN 26: DHT11
+
 *** Technical Reference Manual ***
 https://www.espressif.com/sites/default/files/documentation/esp32_technical_reference_manual_en.pdf
 
