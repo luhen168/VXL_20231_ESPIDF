@@ -33,7 +33,6 @@
 #include "esp_log.h"
 #include "mqtt_client.h"
 
-// void mqtt_app_start(void);
 
 
 #endif

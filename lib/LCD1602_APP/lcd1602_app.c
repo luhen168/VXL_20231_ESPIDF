@@ -1,5 +1,5 @@
 #include "lcd1602_app.h"
-
+#include "esp_log.h"
 smbus_info_t * smbus_info;
 int i2c_master_port = I2C_MASTER_NUM;
 i2c_config_t conf;
@@ -63,6 +63,8 @@ esp_err_t lcd1602_updateScreen(i2c_lcd1602_info_t * lcd_info,dht11_reading *dht1
     sprintf(ppmConvertedToString,"%d",mq135->ppm);
     i2c_lcd1602_write_string(lcd_info,ppmConvertedToString);
     i2c_lcd1602_write_string(lcd_info,"       ");
+
+    ESP_LOGI(__func__, "Updated LCD1602.");
 
     return ESP_OK;
 }

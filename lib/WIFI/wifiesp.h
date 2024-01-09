@@ -17,6 +17,7 @@
 #include "esp_event.h"
 #include "esp_log.h"
 #include "nvs_flash.h"
+#include "driver/gpio.h"
 #include "sdkconfig.h"
 
 #include "lwip/err.h"
@@ -26,8 +27,8 @@
 #define _wifiesp_H
 
 #pragma once
-#define EXAMPLE_ESP_WIFI_SSID      CONFIG_ESP_WIFI_SSID
-#define EXAMPLE_ESP_WIFI_PASS      CONFIG_ESP_WIFI_PASSWORD
+#define EXAMPLE_ESP_WIFI_SSID      "Luan"
+#define EXAMPLE_ESP_WIFI_PASS      "luantrungpro"
 #define EXAMPLE_ESP_MAXIMUM_RETRY  CONFIG_ESP_MAXIMUM_RETRY
 
 #if CONFIG_ESP_WPA3_SAE_PWE_HUNT_AND_PECK
@@ -65,22 +66,22 @@
 #define DEFAULT_SCAN_LIST_SIZE 5
 #define WIFI_CONNECTED_BIT BIT0
 #define WIFI_FAIL_BIT      BIT1
-/**
- * @brief Function: Station mode (aka STA mode or Wi-Fi client mode). ESP32 connects to an access point.
- *         Chế độ này sử dụng ESP32 là trạm (station) kết nối wifi 
- */
-void wifi_init_sta(uint8_t *check);
+// /**
+//  * @brief Function: Station mode (aka STA mode or Wi-Fi client mode). ESP32 connects to an access point.
+//  *         Chế độ này sử dụng ESP32 là trạm (station) kết nối wifi 
+//  */
+// void wifi_init_sta(uint8_t *check);
 
-/**
- * @brief Function: AP mode (aka Soft-AP mode or Access Point mode). Stations connect to the ESP32.
- *        Chế độ này sử dụng ESP32 như một trạm phát wifi
- */
-void wifi_init_softap(void);
+// /**
+//  * @brief Function: AP mode (aka Soft-AP mode or Access Point mode). Stations connect to the ESP32.
+//  *        Chế độ này sử dụng ESP32 như một trạm phát wifi
+//  */
+// void wifi_init_softap(void);
 
-/**
- * @brief Function: Scanning for access points (active & passive scanning).
- *        Hàm này sử dụng để tìm kiếm điểm kết nối wifi chủ động hoặc bị động
- */
-void wifi_scan(void);
+// /**
+//  * @brief Function: Scanning for access points (active & passive scanning).
+//  *        Hàm này sử dụng để tìm kiếm điểm kết nối wifi chủ động hoặc bị động
+//  */
+// void wifi_scan(void);
 
 #endif

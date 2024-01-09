@@ -37,7 +37,6 @@ static dht11_reading last_read;
  * @brief Hàm khởi tạo chân DHT11_init()
  */
 void DHT11_init(gpio_num_t gpio_num) {
-    vTaskDelay(1000 / portTICK_PERIOD_MS);
     dht_gpio = gpio_num;
 }
 
