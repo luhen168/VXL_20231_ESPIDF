@@ -31,12 +31,11 @@
 #include "wifiesp.h"
 #include "MQ135.h"
 #include "lcd1602_app.h"
-#include "mqttTCP.h"
 
 /* --------------------- Define -------------------- */
 #define BUZZER_PIN 32
 #define DHT11_PIN 26  
-#define LED_WIFI_PIN 12
+#define LED_WIFI_PIN 2
 
 #define WEB_SERVER "api.thingspeak.com"
 #define WEB_PORT "80"
@@ -49,7 +48,7 @@ static const char *REQUEST_TEMPLATE = "GET /update?api_key=%s&field1=%d&field2=%
                                       "\r\n";
 static EventGroupHandle_t s_wifi_event_group;
 gpio_config_t io_conf;
-i2c_lcd1602_info_t * lcd_info;
+i2c_lcd1602_info_t *lcd_info;
 dht11_reading dht11;
 MQ135 mq135;
 float prob_DS;
@@ -131,13 +130,10 @@ static void wifi_event_handler(void* arg, esp_event_base_t event_base,int32_t ev
 void wifi_init_sta()
 {   
 
-    s_wifi_event_group = xEventGroupCreate();
+    s_wifi_event_group = xEventGroupCreate();       
     ESP_ERROR_CHECK(esp_netif_init());
-    // if(checkNetif==false){
     ESP_ERROR_CHECK(esp_event_loop_create_default());
     esp_netif_create_default_wifi_sta();
-        // checkNetif=true;
-    // }
     wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
     ESP_ERROR_CHECK(esp_wifi_init(&cfg));
 
@@ -168,9 +164,9 @@ void wifi_init_sta()
             .sae_h2e_identifier = EXAMPLE_H2E_IDENTIFIER,
         },
     };
-    ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA) );
-    ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_STA, &wifi_config) );
-    ESP_ERROR_CHECK(esp_wifi_start() );
+    ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
+    ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_STA, &wifi_config));
+    ESP_ERROR_CHECK(esp_wifi_start());
 
     ESP_LOGI(__func__, "wifi_init_sta finished.");
 
@@ -197,11 +193,17 @@ void wifi_init_sta()
 }
 
 void checkFire_DS(){
-	float t = (float)dht11.temperature/50;
-	float h = 1-((float)dht11.humidity-20)/70;
-    float ppm = mq135.ppm/1000;
-    float prob_DSth = (t*h + 0.08*h + 0.15*t) / (1-((1-h-0.15)*t + (1-t-0.08)*h));
-    prob_DS = (ppm*prob_DSth + 0.05*prob_DSth + 0.012*ppm) / (1-((1-prob_DSth-0.012)*ppm + (1-ppm-0.05)*prob_DSth));
+	float t = dht11.temperature;
+	float h = dht11.humidity;
+    float ppm = mq135.ppm;
+
+	t = t/50;
+	h = 1-(h-20)/70;
+    ppm = ppm/1000;
+
+    printf("%f, %f, %f\n",t,h,ppm);
+    prob_DS = (t*h + 0.08*h + 0.15*t) / (1-((1-h-0.15)*t + (1-t-0.08)*h));
+    prob_DS = (ppm*prob_DS + 0.05*prob_DS + 0.012*ppm) / (1-((1-prob_DS-0.012)*ppm + (1-ppm-0.05)*prob_DS));
 	
 	if(prob_DS>0.5)
 	{
@@ -221,28 +223,10 @@ void app_main(void)
     /* Initialize NVS */
     ESP_ERROR_CHECK(nvs_flash_init());
     /* Initialize Buzzer and Led */
-    gpio_config_t io_conf;
-    io_conf.pin_bit_mask = (1ULL << DHT11_PIN);
-    io_conf.mode = GPIO_MODE_INPUT;
-    io_conf.pull_up_en = GPIO_PULLUP_DISABLE;
-    io_conf.pull_down_en = GPIO_PULLDOWN_DISABLE;
-    io_conf.intr_type = GPIO_INTR_DISABLE;
-    gpio_config(&io_conf);
-
-    io_conf.pin_bit_mask = (1ULL << BUZZER_PIN),
-    io_conf.mode = GPIO_MODE_OUTPUT,
-    io_conf.intr_type = GPIO_INTR_DISABLE,
-    io_conf.pull_down_en = 0,
-    io_conf.pull_up_en = 0,
-    gpio_config(&io_conf);
+    gpio_set_direction(BUZZER_PIN, GPIO_MODE_OUTPUT);
     gpio_set_level(BUZZER_PIN, 0); 
 
-    io_conf.pin_bit_mask = (1ULL << LED_WIFI_PIN);
-    io_conf.mode = GPIO_MODE_OUTPUT;
-    io_conf.pull_up_en = GPIO_PULLUP_DISABLE; // Vô hiệu pull-up
-    io_conf.pull_down_en = GPIO_PULLDOWN_DISABLE; // Vô hiệu pull-down
-    io_conf.intr_type = GPIO_INTR_DISABLE;
-    gpio_config(&io_conf);
+    gpio_set_direction(LED_WIFI_PIN, GPIO_MODE_OUTPUT);
     gpio_set_level(LED_WIFI_PIN, 0); 
 
     /* Initialize Wifi */ 
@@ -256,17 +240,24 @@ void app_main(void)
     lcd1602_init(lcd_info);
     
     while(1){
-        ESP_LOGI(__func__,"/*----------------------- WHILE LOOP BEGIN --------------------*/");
         //time start 
-        vTaskDelay(100/portTICK_PERIOD_MS);
         uint64_t start_time = esp_timer_get_time();
-        
+        ESP_LOGI(__func__,"/*----------------------- WHILE LOOP BEGIN --------------------*/");
         printf("Read MQ135.\n");
-        mq135 = MQ135_readData();
+        mq135 = MQ135_read();
         printf("Read DHT11.\n");
         dht11 = DHT11_read();
         if(dht11.status == DHT11_OK){
-            printf("Do am: %d, Nhiet do: %d, PPM: %d\n",dht11.humidity,dht11.temperature,mq135.ppm);
+            if(dht11.temperature>50){
+                dht11.temperature = 50;
+            }
+            if(dht11.humidity<20){
+                dht11.humidity = 20;
+            }
+            if(mq135.ppm>1000){
+                mq135.ppm = 1000;
+            }
+            printf("Nhiet do: %d, Do am: %d, PPM: %d\n",dht11.temperature,dht11.humidity,mq135.ppm);
             lcd1602_updateScreen(lcd_info,&dht11,&mq135);
         }else if(dht11.status == DHT11_CRC_ERROR ){
             printf("CRC error reading data from DHT11.\n");
@@ -277,11 +268,12 @@ void app_main(void)
         printf("Check Probality Fire\n");
         checkFire_DS();
 
-        vTaskDelay(10000/portTICK_PERIOD_MS);  // Wifi check here
+        vTaskDelay(14600/portTICK_PERIOD_MS);  
 
         printf("Connect to ThinkSpeak\n");
         send_to_thingspeak(dht11.temperature,dht11.humidity,mq135.ppm,prob_DS);
         printf("Close to ThinkSpeak\n");
+
 
         //get time end
         uint64_t end_time = esp_timer_get_time();

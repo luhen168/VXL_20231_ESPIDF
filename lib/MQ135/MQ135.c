@@ -26,7 +26,7 @@ const static char *TAG = "EXAMPLE";
 ---------------------------------------------------------------*/
 //ADC1 Channels
 #if CONFIG_IDF_TARGET_ESP32
-#define EXAMPLE_ADC1_CHAN0          ADC_CHANNEL_6
+#define EXAMPLE_ADC1_CHAN0          ADC_CHANNEL_6  //GPIO34
 #define EXAMPLE_ADC1_CHAN1          ADC_CHANNEL_5
 #else
 #define EXAMPLE_ADC1_CHAN0          ADC_CHANNEL_6
@@ -68,7 +68,7 @@ void MQ135_init()
 }
 
 
-MQ135 MQ135_readData(){
+MQ135 MQ135_read(){
     float rload = 10.0;
     float rzero = 76.63;
     float rs;

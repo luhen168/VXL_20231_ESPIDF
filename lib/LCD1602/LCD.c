@@ -101,17 +101,17 @@ void lcd_init (void)
 	usleep(10000);
 
   	// dislay initialisation
-	lcd_send_cmd (0x28); // Function set --> DL=0 (4 bit mode), N = 1 (2 line display) F = 0 (5x8 characters)
-	usleep(1000);
-	lcd_send_cmd (0x08); //Display on/off control --> D=0,C=0, B=0  ---> display off
-	usleep(1000);
-	lcd_send_cmd (0x01);  // clear display
-	usleep(1000);
-	usleep(1000);
-	lcd_send_cmd (0x06); //Entry mode set --> I/D = 1 (increment cursor) & S = 0 (no shift)
-	usleep(1000);
-	lcd_send_cmd (0x0C); //Display on/off control --> D = 1, C and B = 0. (Cursor and blink, last two bits)
-	usleep(1000);
+	// lcd_send_cmd (0x28); // Function set --> DL=0 (4 bit mode), N = 1 (2 line display) F = 0 (5x8 characters)
+	// usleep(1000);
+	// lcd_send_cmd (0x08); //Display on/off control --> D=0,C=0, B=0  ---> display off
+	// usleep(1000);
+	// lcd_send_cmd (0x01);  // clear display
+	// usleep(1000);
+	// usleep(1000);
+	// lcd_send_cmd (0x06); //Entry mode set --> I/D = 1 (increment cursor) & S = 0 (no shift)
+	// usleep(1000);
+	// lcd_send_cmd (0x0C); //Display on/off control --> D = 1, C and B = 0. (Cursor and blink, last two bits)
+	// usleep(1000);
 }
 
 void lcd_send_cmd (char cmd)
@@ -145,8 +145,8 @@ void lcd_send_data (char data)
 void lcd_clear (void)
 {
 	lcd_send_cmd (LCD_CLEARDISPLAY);
-	usleep(2000);
-	lcd_put_cur(0,0);
+	// usleep(2000);
+	// lcd_put_cur(0,0);
 }
 
 void lcd_put_cur(int row, int col)

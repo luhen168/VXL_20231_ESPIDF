@@ -1,36 +1,11 @@
-/*
- * MIT License
- * 
- * Copyright (c) 2018 Michele Biondi
- * 
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
- * 
- * The above copyright notice and this permission notice shall be included in all
- * copies or substantial portions of the Software.
- * 
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
- * SOFTWARE.
-*/
-
 #include "esp_timer.h"
-#include "driver/gpio.h"
 #include "rom/ets_sys.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "dht11.h"
 
 static gpio_num_t dht_gpio;
-static int64_t last_read_time = -2000000;
+static int64_t last_read_time = -1000000;
 static dht11_reading last_read;
 
 /**
@@ -45,8 +20,8 @@ void DHT11_init(gpio_num_t gpio_num) {
  *        Gồm các hàm con sau: _waitOrTimeout,_checkCRC,_sendStartSignal
  *                             _checkResponse,_timeoutError,_crcError
  */
-
-//
+        
+// Hàm đợi hoặc waitortimeout: dùng để đợi đến khi chân GPIO đạt được mức logic mong muốn hoặc hết thời gian timeout    
 static int _waitOrTimeout(uint16_t microSeconds, int level) {
     int micros_ticks = 0;
     while(gpio_get_level(dht_gpio) == level) { 
@@ -57,7 +32,7 @@ static int _waitOrTimeout(uint16_t microSeconds, int level) {
     return micros_ticks;
 }
 
-//
+// CheckCRC: Kiểm tra tính đúng đắn của dữ liệu bằng cách so sánh giá trị CRC với tổng 4 byte trước
 static int _checkCRC(uint8_t data[]) {
     if(data[4] == (data[0] + data[1] + data[2] + data[3]))
         return DHT11_OK;
@@ -65,7 +40,7 @@ static int _checkCRC(uint8_t data[]) {
         return DHT11_CRC_ERROR;
 }
 
-//
+// Hàm gửi tín hiệu bắt đầu cho cảm biến DHT11
 static void _sendStartSignal() {
     gpio_set_direction(dht_gpio, GPIO_MODE_OUTPUT);
     gpio_set_level(dht_gpio, 0);
@@ -75,7 +50,7 @@ static void _sendStartSignal() {
     gpio_set_direction(dht_gpio, GPIO_MODE_INPUT);
 }
 
-//
+// Hàm kiểm tra phản hồi từ cảm biến DHT11 sau khi gửi tín hiệu bắt đầu
 static int _checkResponse() {
     /* Wait for next step ~80us*/
     if(_waitOrTimeout(80, 0) == DHT11_TIMEOUT_ERROR)
@@ -88,45 +63,49 @@ static int _checkResponse() {
     return DHT11_OK;
 }
 
-//
+// Trả về 1 cấu trúc dht11_reading cho lỗi timeout
 static dht11_reading _timeoutError() {
     dht11_reading timeoutError = {DHT11_TIMEOUT_ERROR, -1, -1};
     return timeoutError;
 }
 
-//
+// Trả về 1 cấu trúc dht11_reading cho lỗi CRC
 static dht11_reading _crcError() {
     dht11_reading crcError = {DHT11_CRC_ERROR, -1, -1};
     return crcError;
 }
 
-//
+// Hàm đọc cảm biến DHT11
 dht11_reading DHT11_read() {
-    /* Tried to sense too son since last read (dht11 needs ~2 seconds to make a new read) */
-    if(esp_timer_get_time() - 2000000 < last_read_time) {
+    /* Khai báo và định nghĩa hàm DHT11_read trả về một cấu trúc DHT11_reading
+    Kiểm tra xem đã qua ít nhất 1s kể từ lần đọc cuối chưa.*/
+    if(esp_timer_get_time() - 1000000 < last_read_time) {
         return last_read;
     }
-    last_read_time = esp_timer_get_time();
+
+    //Ghi lại thời điểm hiện tại và khai báo một mảng data với 5 phần tử để lưu dữ liệu đọc từ cảm biến.
+    last_read_time = esp_timer_get_time(); 
     uint8_t data[5] = {0,0,0,0,0};
 
-    /* MCU send start signal to DHT11 in 5.2 datasheet dht11 page 6 */
+    /* Gửi tín hiệu bắt đầu và kiểm tra phản hồi từ cảm biến. */
     _sendStartSignal();
     // Phần phản hồi (response) sau bước trên
     if(_checkResponse() == DHT11_TIMEOUT_ERROR)
         return last_read = _timeoutError();
     
-    /* DHT11 response MCU in 5.3 datasheet dht11 page 7 */
+    /* Sử dụng vòng lặp để đọc 40 bit dữ liệu từ cảm biến */
     for(int i = 0; i < 40; i++) {
-        /* Initial data */
+        // Chờ tín hiệu thấp, kiểm tra lỗi thời gian chờ và trả về giá trị lỗi nếu có 
         if(_waitOrTimeout(50, 0) == DHT11_TIMEOUT_ERROR)
             return last_read = _timeoutError();
-                
+        // Chờ tín hiệu cao, thời gian chờ lớn hơn 28, thiết lập bit tương ứng của data thành 1        
         if(_waitOrTimeout(70, 1) > 28) {
             /* Bit received was a 1 */
             data[i/8] |= (1 << (7-(i%8)));
         }
     }
 
+    // Kiểm tra tính chính xác của dữ liệu bằng cách so sánh với giá trị kiểm tra CRC
     if(_checkCRC(data) != DHT11_CRC_ERROR) {
         last_read.status = DHT11_OK;
         last_read.temperature = data[2];

@@ -27,8 +27,8 @@
 #define _wifiesp_H
 
 #pragma once
-#define EXAMPLE_ESP_WIFI_SSID      "Luan"
-#define EXAMPLE_ESP_WIFI_PASS      "luantrungpro"
+#define EXAMPLE_ESP_WIFI_SSID      "DinhDang"
+#define EXAMPLE_ESP_WIFI_PASS      "dangcd123"
 #define EXAMPLE_ESP_MAXIMUM_RETRY  CONFIG_ESP_MAXIMUM_RETRY
 
 #if CONFIG_ESP_WPA3_SAE_PWE_HUNT_AND_PECK

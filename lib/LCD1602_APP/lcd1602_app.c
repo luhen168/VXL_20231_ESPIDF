@@ -11,9 +11,9 @@ esp_err_t lcd1602_init(i2c_lcd1602_info_t * lcd_info){
      // Set up I2C
     conf.mode = I2C_MODE_MASTER;
     conf.sda_io_num = I2C_MASTER_SDA_IO;
-    conf.sda_pullup_en = GPIO_PULLUP_DISABLE;  // GY-2561 provides 10kΩ pullups
+    conf.sda_pullup_en = GPIO_PULLUP_ENABLE;  // GY-2561 provides 10kΩ pullups
     conf.scl_io_num = I2C_MASTER_SCL_IO;
-    conf.scl_pullup_en = GPIO_PULLUP_DISABLE;  // GY-2561 provides 10kΩ pullups
+    conf.scl_pullup_en = GPIO_PULLUP_ENABLE;  // GY-2561 provides 10kΩ pullups
     conf.master.clk_speed = I2C_MASTER_FREQ_HZ;
     i2c_param_config(i2c_master_port, &conf);
     i2c_driver_install(i2c_master_port, conf.mode,
@@ -26,7 +26,6 @@ esp_err_t lcd1602_init(i2c_lcd1602_info_t * lcd_info){
     ESP_ERROR_CHECK(smbus_set_timeout(smbus_info, 1000 / portTICK_PERIOD_MS));
 
     // Set up the LCD1602 device with backlight off
-    // lcd_info = i2c_lcd1602_malloc();
     ESP_ERROR_CHECK(i2c_lcd1602_init(lcd_info, smbus_info, true,LCD_NUM_ROWS, LCD_NUM_COLUMNS, LCD_NUM_VISIBLE_COLUMNS));
 
     ESP_ERROR_CHECK(i2c_lcd1602_reset(lcd_info));
@@ -46,13 +45,13 @@ esp_err_t lcd1602_updateScreen(i2c_lcd1602_info_t * lcd_info,dht11_reading *dht1
     char humConvertedToString[6];
     char ppmConvertedToString[10];
 
-    i2c_lcd1602_move_cursor(lcd_info, 0, 0);
+    i2c_lcd1602_move_cursor(lcd_info,0,0);
     i2c_lcd1602_write_string(lcd_info,"RH:");
     sprintf(humConvertedToString,"%d",dht11->humidity);
     i2c_lcd1602_write_string(lcd_info,humConvertedToString);
-    i2c_lcd1602_write_char(lcd_info,'%');
+    i2c_lcd1602_write_string(lcd_info,"% ");
 
-    i2c_lcd1602_move_cursor(lcd_info,8,0);
+    i2c_lcd1602_move_cursor(lcd_info,10,0);
     sprintf(tempConvertedToString,"%d",dht11->temperature);
     i2c_lcd1602_write_string(lcd_info,tempConvertedToString);
     i2c_lcd1602_write_string(lcd_info,"oC");

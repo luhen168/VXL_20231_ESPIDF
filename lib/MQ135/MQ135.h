@@ -30,6 +30,6 @@ typedef struct{
 }MQ135;
 
 void MQ135_init(void);
-MQ135 MQ135_readData();
+MQ135 MQ135_read();
 
 #endif
